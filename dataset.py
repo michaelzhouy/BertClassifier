@@ -5,6 +5,7 @@ from torch.utils.data import Dataset
 from transformers import BertTokenizer
 from tqdm import tqdm
 
+
 class CNewsDataset(Dataset):
     def __init__(self, filename):
         self.labels = ['体育', '娱乐', '家居', '房产', '教育', '时尚', '时政', '游戏', '科技', '财经']
@@ -33,4 +34,3 @@ class CNewsDataset(Dataset):
 
     def __len__(self):
         return len(self.input_ids)
-
