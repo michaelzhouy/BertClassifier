@@ -6,15 +6,15 @@ from model import BertClassifier
 from dataset import CNewsDataset
 from tqdm import tqdm
 import os
-os.environ['cuda_visible_devices'] = '6'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3,4,5'
 
 
 def main():
 
     # 参数设置
-    batch_size = 4
+    batch_size = 8
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    epochs = 10
+    epochs = 2
     learning_rate = 5e-6  # Learning Rate不宜太大
 
     # 获取到dataset
@@ -72,34 +72,35 @@ def main():
         print('\tTrain ACC:', average_acc, '\tLoss:', average_loss)
 
         # 验证
-        model.eval()
-        losses = 0      # 损失
-        accuracy = 0    # 准确率
-        valid_bar = tqdm(valid_dataloader)
-        for input_ids, token_type_ids, attention_mask, label_id in valid_bar:
-            valid_bar.set_description('Epoch %i valid' % epoch)
-            output = model(
-                input_ids=input_ids.to(device), 
-                attention_mask=attention_mask.to(device), 
-                token_type_ids=token_type_ids.to(device), 
-            )
-            
-            loss = criterion(output, label_id.to(device))
-            losses += loss.item()
+        with torch.no_grad():
+            model.eval()
+            losses = 0      # 损失
+            accuracy = 0    # 准确率
+            valid_bar = tqdm(valid_dataloader)
+            for input_ids, token_type_ids, attention_mask, label_id in valid_bar:
+                valid_bar.set_description('Epoch %i valid' % epoch)
+                output = model(
+                    input_ids=input_ids.to(device),
+                    attention_mask=attention_mask.to(device),
+                    token_type_ids=token_type_ids.to(device),
+                )
 
-            pred_labels = torch.argmax(output, dim=1)   # 预测出的label
-            acc = torch.sum(pred_labels == label_id.to(device)).item() / len(pred_labels)  # acc
-            accuracy += acc
-            valid_bar.set_postfix(loss=loss.item(), acc=acc)
+                loss = criterion(output, label_id.to(device))
+                losses += loss.item()
 
-        average_loss = losses / len(valid_dataloader)
-        average_acc = accuracy / len(valid_dataloader)
+                pred_labels = torch.argmax(output, dim=1)   # 预测出的label
+                acc = torch.sum(pred_labels == label_id.to(device)).item() / len(pred_labels)  # acc
+                accuracy += acc
+                valid_bar.set_postfix(loss=loss.item(), acc=acc)
 
-        print('\tValid ACC:', average_acc, '\tLoss:', average_loss)
+            average_loss = losses / len(valid_dataloader)
+            average_acc = accuracy / len(valid_dataloader)
 
-        if average_acc > best_acc:
-            best_acc = average_acc
-            torch.save(model.state_dict(), 'models/best_model.pkl')
+            print('\tValid ACC:', average_acc, '\tLoss:', average_loss)
+
+            if average_acc > best_acc:
+                best_acc = average_acc
+                torch.save(model.state_dict(), 'models/best_model.pkl')
         
 if __name__ == '__main__':
     main()
