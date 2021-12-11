@@ -1,3 +1,5 @@
+import os.path
+
 import torch
 import numpy as np
 import torch.nn as nn
@@ -7,9 +9,9 @@ from tqdm import tqdm
 
 
 class CNewsDataset(Dataset):
-    def __init__(self, filename):
+    def __init__(self, filename, model_name_or_path):
         self.labels = ['体育', '娱乐', '家居', '房产', '教育', '时尚', '时政', '游戏', '科技', '财经']
-        self.tokenizer = BertTokenizer.from_pretrained('bert-base-chinese')
+        self.tokenizer = BertTokenizer.from_pretrained(model_name_or_path)
         self.input_ids = []
         self.token_type_ids = []
         self.attention_mask = []
@@ -34,3 +36,33 @@ class CNewsDataset(Dataset):
 
     def __len__(self):
         return len(self.input_ids)
+
+
+class CNewsDatasetDF(Dataset):
+    def __init__(self, dataframe, tokenizer, max_len):
+        self.labels = ['体育', '娱乐', '家居', '房产', '教育', '时尚', '时政', '游戏', '科技', '财经']
+        self.len = len(dataframe)
+        self.data = dataframe
+        self.tokenizer = tokenizer
+        self.max_len = max_len
+
+    def __getitem__(self, index):
+        title = str(self.data.content[index])
+        title = " ".join(title.split())
+        inputs = self.tokenizer.encode_plus(
+            title,
+            None,
+            add_special_tokens=True,
+            max_length=self.max_len,
+            pad_to_max_length=True,
+            return_token_type_ids=True,
+            truncation=True
+        )
+        inputs_ids = inputs['input_ids']
+        token_type_ids = inputs['token_type_ids']
+        mask = inputs['attention_mask']
+
+        return torch.tensor(inputs_ids, dtype=torch.long), torch.tensor(token_type_ids, dtype=torch.long), torch.tensor(mask, dtype=torch.long), torch.tensor(self.data.label[index], dtype=torch.long)
+
+    def __len__(self):
+        return self.len
