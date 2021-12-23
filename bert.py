@@ -68,6 +68,8 @@ def main():
         model.train()
         train_bar = tqdm(train_dataloader)
         for input_ids, token_type_ids, attention_mask, label_id in train_bar:
+            # print('input_ids', input_ids)
+            # print('input_ids shape', input_ids.shape)
             model.zero_grad()
             train_bar.set_description('Epoch %i train' % epoch)
 
