@@ -1,3 +1,6 @@
 *.csv
-__pycache__
-*.log*
+*.txt
+__pycache__*
+*log*
+*.pth
+*.pkl
